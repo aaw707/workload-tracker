@@ -439,19 +439,27 @@ def works_by_month_page(root):
     canvas.create_window((0, 0), window = table_frame, anchor = 'nw')
 
     # dfs to show
-    # active works
     df = works_df[['id', 'name', 'client_id', 'memo', 'price']].rename(columns = {'id': 'work_id'}).fillna('')
     # get client names
     df = df.merge(clients_df[['id', 'client']], left_on = "client_id", right_on = "id", suffixes=('_work', '_client')).drop('id', axis = 1) # drop repetitive client id
+
+    # get create_date for each work (for monthly filtering)
+    status_log_df['rank'] = status_log_df.groupby('work_id')['timestamp'].rank(ascending = True) # TRUE here for create date
+    earliest_logs = status_log_df[status_log_df['rank'] == 1][['work_id', 'start_date']].rename(columns={"start_date": "create_date"})
+    status_log_df.drop('rank', axis = 1, inplace = True)
+    # merge create date to df
+    df = df.merge(earliest_logs, on = "work_id")
+
     # get latest log for each work
     status_log_df['rank'] = status_log_df.groupby('work_id')['timestamp'].rank(ascending = False)
     latest_logs = status_log_df[status_log_df['rank'] == 1]
     status_log_df.drop('rank', axis = 1, inplace = True)
     # get latest status name for each work that's not fully paid
-    df = df.merge(latest_logs[['work_id', 'status_id', 'start_date', 'end_date']], on = "work_id")
+    df = df.merge(latest_logs[['work_id', 'status_id']], on = "work_id")
     df = df.merge(status_df, left_on = 'status_id', right_on = 'id').drop('id', axis = 1) # drop repetitive status id
+
     # sort by start date
-    df = df.sort_values(by = "start_date").reset_index()
+    df = df.sort_values(by = "create_date").reset_index()
 
     # for each active work, show on the view
     def work_details(work_id):
@@ -508,8 +516,8 @@ def works_by_month_page(root):
             selected_month = int(year_month.split("-")[1])
 
         # only show the works started in selected month
-        filtered_df = df[(df['start_date'].dt.year == select_year) & (df['start_date'].dt.month == selected_month)]
-        print(filtered_df['start_date'])
+        filtered_df = df[(df['create_date'].dt.year == select_year) & (df['create_date'].dt.month == selected_month)]
+        
         construct_work_table(filtered_df, 2)  
         return_btn.focus()
 
@@ -531,7 +539,7 @@ def works_by_month_page(root):
     # list the works of current month
     select_year = dt.now().year
     selected_month = dt.now().month
-    filtered_df = df[(df['start_date'].dt.year == select_year) & (df['start_date'].dt.month == selected_month)]
+    filtered_df = df[(df['create_date'].dt.year == select_year) & (df['create_date'].dt.month == selected_month)]
     construct_work_table(filtered_df, 2)  
 
     # table_frame.pack() 
