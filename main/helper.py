@@ -17,8 +17,8 @@ cwd = __location__ + "\\data\\"
 # when creating the exe, use this line to get cwd
 # cwd = "data\\"
 
-VERSION = 1.2
-LAST_UPDATED = "2022-9-3"
+VERSION = 1.3
+LAST_UPDATED = "2022-12-26"
 
 def main_page(root):
 
