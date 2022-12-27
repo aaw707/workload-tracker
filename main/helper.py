@@ -474,34 +474,58 @@ def works_by_month_page(root):
         # headers
         header_name = Label(table_frame, text = "作品名", font=("微软雅黑", 16))
         header_client = Label(table_frame, text = "客户名", font=("微软雅黑", 16))
-        header_price = Label(table_frame, text = "总价", font=("微软雅黑", 16))
         header_status = Label(table_frame, text = "状态", font=("微软雅黑", 16))
+        header_price = Label(table_frame, text = "总价", font=("微软雅黑", 16))
         header_memo = Label(table_frame, text = "备注", font=("微软雅黑", 16))
         # grid the headers
         header_name.grid(row = 0, column = 0, padx = 20, pady = 10)
         header_client.grid(row = 0, column = 1, padx = 20, pady = 10)
-        header_price.grid(row = 0, column = 2, padx = 20, pady = 10)
-        header_status.grid(row = 0, column = 3, padx = 20, pady = 10)
+        header_status.grid(row = 0, column = 2, padx = 20, pady = 10)
+        header_price.grid(row = 0, column = 3, padx = 20, pady = 10)
         header_memo.grid(row = 0, column = 4, padx = 20, pady = 10, sticky = 'w')
 
         # separator line
         separator = ttk.Separator(table_frame, orient='horizontal')
         separator.grid(row = 1, column = 0, columnspan = 5, sticky="ew")
         
+        # keep track of monthly total
+        total = 0
+
         # construct new widgets
-        for i, row in df.iterrows():
+        df_reset_index = df.reset_index()
+        for i, row in df_reset_index.iterrows():
             # show the work details
             active_work_i_btn = Button(table_frame, text = row['name'], command= lambda row = row: work_details(row['work_id']), font=("微软雅黑", 16))
             active_work_i_client = Label(table_frame, text = row['client'], font=("微软雅黑", 16))
-            active_work_i_price = Label(table_frame, text = row['price'], font=("微软雅黑", 16))
             active_work_i_status = Label(table_frame, text = row['status'], font=("微软雅黑", 16))
+            active_work_i_price = Label(table_frame, text = row['price'], font=("微软雅黑", 16))
             active_work_i_memo = Label(table_frame, text = row['memo'], font=("微软雅黑", 16))
             # grid the details
             active_work_i_btn.grid(row = i + starting_row, column = 0, padx = 20, pady = 10)
             active_work_i_client.grid(row = i + starting_row, column = 1, padx = 20, pady = 10)
-            active_work_i_price.grid(row = i + starting_row, column = 2, padx = 20, pady = 10)
-            active_work_i_status.grid(row = i + starting_row, column = 3, padx = 20, pady = 10)
+            active_work_i_status.grid(row = i + starting_row, column = 2, padx = 20, pady = 10)
+            active_work_i_price.grid(row = i + starting_row, column = 3, padx = 20, pady = 10)
             active_work_i_memo.grid(row = i + starting_row, column = 4, padx = 20, pady = 10, sticky = 'w')
+            # keep track of monthly total
+            total += row['price']
+
+        # separator line
+        separator2 = ttk.Separator(table_frame, orient='horizontal')
+        separator2.grid(row = df_reset_index.shape[0] + starting_row + 1, column = 0, columnspan = 5, sticky="ew")
+        
+        # total
+        total_row = df_reset_index.shape[0] + starting_row + 2
+        total_label = Label(table_frame, text = "总计：", font=("微软雅黑", 16))
+        total_label.grid(row = total_row, column = 2)
+        total_amt = Label(table_frame, text = total, font=("微软雅黑", 16))
+        total_amt.grid(row = total_row, column = 3)
+
+        # table_frame.pack() 
+        canvas_frame.pack()
+        table_frame.update()
+        frame_width = table_frame.winfo_width()
+        frame_height = table_frame.winfo_height()
+        canvas.configure(width = min(frame_width, 1600), height = min(850, frame_height))
 
     def filter_records(_):
         year_month = year_month_dropdown.get()
@@ -517,7 +541,7 @@ def works_by_month_page(root):
 
         # only show the works started in selected month
         filtered_df = df[(df['create_date'].dt.year == select_year) & (df['create_date'].dt.month == selected_month)]
-        
+
         construct_work_table(filtered_df, 2)  
         return_btn.focus()
 
@@ -541,13 +565,6 @@ def works_by_month_page(root):
     selected_month = dt.now().month
     filtered_df = df[(df['create_date'].dt.year == select_year) & (df['create_date'].dt.month == selected_month)]
     construct_work_table(filtered_df, 2)  
-
-    # table_frame.pack() 
-    canvas_frame.pack()
-    table_frame.update()
-    frame_width = table_frame.winfo_width()
-    canvas.configure(width = min(frame_width, 1600), height = 620)
-
 
     # return button
     def return_to_main_page():
